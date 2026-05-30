@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import Image from "next/image";
+import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,18 +23,28 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreeTerms) {
-      alert("Please agree to the Terms of Service and Privacy Policy.");
+      alert("Anda harus menyetujui Syarat Layanan dan Kebijakan Privasi untuk mendaftar.");
       return;
     }
-    setIsSubmitting(true);
-    // Simulasi proses registrasi
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      setIsSubmitting(true);
+      const res = await api.post("/auth/register", {
+        name:fullName,
+        email,
+        password,
+      });
+      console.log(res.data);
       setSubmitSuccess(true);
-      // Di sini Anda bisa melakukan fetch ke API endpoint /api/register
-      console.log({ fullName, email, password });
-      setTimeout(() => setSubmitSuccess(false), 3000);
-    }, 1500);
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
+    } catch (error: any) {
+      console.error(error);
+
+      alert(error?.response?.data?.message || "Terjadi kesalahan saat mendaftar. Silakan coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

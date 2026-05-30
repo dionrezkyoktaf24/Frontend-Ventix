@@ -1,7 +1,8 @@
 "use client";
 
+import { api } from "@/lib/api";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   ArrowRight,
@@ -42,98 +43,7 @@ const categories = [
   { id: "lainnya", label: "Lainnya", icon: Globe, color: "from-gray-500 to-slate-600", bg: "bg-gray-50", text: "text-gray-600", count: 56 },
 ];
 
-const featuredEvents = [
-  {
-    id: "1",
-    slug: "java-jazz-festival-2025",
-    title: "Java Jazz Festival 2025",
-    category: "Konser",
-    categoryColor: "pink" as const,
-    date: "2025-08-15",
-    location: "Jakarta Convention Center",
-    price: 350000,
-    availableSeats: 120,
-    totalSeats: 1500,
-    imageColor: "from-pink-500 via-rose-500 to-orange-400",
-    organizer: "Java Jazz Inc.",
-    isFeatured: true,
-  },
-  {
-    id: "2",
-    slug: "nextjs-conf-indonesia-2025",
-    title: "Next.js Conference Indonesia 2025",
-    category: "Seminar",
-    categoryColor: "blue" as const,
-    date: "2025-07-20",
-    location: "Bali International Convention Centre",
-    price: 150000,
-    availableSeats: 45,
-    totalSeats: 500,
-    imageColor: "from-indigo-500 via-blue-500 to-cyan-400",
-    organizer: "Vercel Indonesia",
-    isFeatured: true,
-  },
-  {
-    id: "3",
-    slug: "ui-ux-masterclass-surabaya",
-    title: "UI/UX Design Masterclass Surabaya",
-    category: "Workshop",
-    categoryColor: "orange" as const,
-    date: "2025-07-05",
-    location: "Surabaya Tech Hub",
-    price: 250000,
-    availableSeats: 28,
-    totalSeats: 50,
-    imageColor: "from-amber-500 via-orange-500 to-red-400",
-    organizer: "DesignLab ID",
-    isFeatured: false,
-  },
-  {
-    id: "4",
-    slug: "free-webinar-digital-marketing",
-    title: "Webinar Gratis: Strategi Digital Marketing 2025",
-    category: "Webinar",
-    categoryColor: "default" as const,
-    date: "2025-06-30",
-    location: "Online - Zoom",
-    price: 0,
-    availableSeats: 850,
-    totalSeats: 1000,
-    imageColor: "from-violet-500 via-purple-500 to-fuchsia-400",
-    organizer: "GrowthHack Academy",
-    isFeatured: false,
-  },
-  {
-    id: "5",
-    slug: "indonesia-esports-championship",
-    title: "Indonesia Esports Championship 2025",
-    category: "Olahraga",
-    categoryColor: "success" as const,
-    date: "2025-09-10",
-    location: "Istora Senayan, Jakarta",
-    price: 125000,
-    availableSeats: 2200,
-    totalSeats: 5000,
-    imageColor: "from-emerald-500 via-teal-500 to-cyan-400",
-    organizer: "IESF Indonesia",
-    isFeatured: true,
-  },
-  {
-    id: "6",
-    slug: "bandung-music-festival",
-    title: "Bandung Music Festival 2025",
-    category: "Festival",
-    categoryColor: "purple" as const,
-    date: "2025-08-28",
-    location: "Stadion Persib, Bandung",
-    price: 175000,
-    availableSeats: 3100,
-    totalSeats: 8000,
-    imageColor: "from-purple-500 via-fuchsia-500 to-pink-400",
-    organizer: "Festival Nusantara",
-    isFeatured: false,
-  },
-];
+
 
 const stats = [
   { label: "Event Aktif", value: "2,400+", icon: Calendar, color: "text-[#6C63FF]", bg: "bg-indigo-50" },
@@ -397,7 +307,7 @@ function CategoriesSection() {
 }
 
 // ─── Featured Events Section ───────────────────────────────────────────────────
-function FeaturedEventsSection() {
+function FeaturedEventsSection({ featuredEvents }: { featuredEvents: any[] }) {
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -421,7 +331,7 @@ function FeaturedEventsSection() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredEvents.map((event) => (
+          {featuredEvents.map((event: any) => (
             <EventCard key={event.id} {...event} />
           ))}
         </div>
@@ -598,13 +508,31 @@ function CTASection() {
 
 // ─── Main Landing Page ────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const [featuredEvents, setFeaturedEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const loadEvents = async () => {
+    try {
+      const res =await api.get("/events");
+      console.log("EVENTS", res.data);
+      setFeaturedEvents(res.data.data)
+    } catch (error) {
+      console.error("ERROR :",error);
+    }finally {
+      setLoading(false);
+    }
+  }
   return (
     <main className="min-h-screen">
       <Navbar />
       <HeroSection />
       <StatsSection />
       <CategoriesSection />
-      <FeaturedEventsSection />
+      <FeaturedEventsSection featuredEvents={featuredEvents} />
       <FeaturesSection />
       <TestimonialsSection />
       <CTASection />
