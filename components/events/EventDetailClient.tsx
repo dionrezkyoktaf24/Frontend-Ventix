@@ -1,10 +1,33 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+const AUTH_KEY = "ventix:auth";
+
+function isAuthenticated() {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = window.localStorage.getItem(AUTH_KEY);
+    if (!raw) return false;
+    const auth = JSON.parse(raw);
+    return auth?.isAuthenticated === true;
+  } catch {
+    return false;
+  }
+}
+
 export default function EventDetailClient({ event }: { event: any }) {
+  const router = useRouter();
+
+  const handleOrderClick = () => {
+    if (!isAuthenticated()) {
+      router.push(`/login?next=${encodeURIComponent(`/events/${event.slug}/select`)}`);
+      return;
+    }
+    router.push(`/events/${event.slug}/select`);
+  };
   const [timeLeft, setTimeLeft] = useState({ days: "00", hours: "00", minutes: "00", seconds: "00" });
 
   useEffect(() => {
@@ -160,7 +183,13 @@ export default function EventDetailClient({ event }: { event: any }) {
               </div>
             </div>
 
-            <Link href={`/events/${event.slug}/select`} className="w-full inline-flex justify-center bg-primary text-on-primary py-4 rounded-xl font-headline-md text-headline-md hover:bg-secondary transition-all active:scale-[0.98] shadow-lg shadow-primary/20">Pesan Tiket</Link>
+            <button
+              type="button"
+              onClick={handleOrderClick}
+              className="w-full inline-flex justify-center bg-primary text-on-primary py-4 rounded-xl font-headline-md text-headline-md hover:bg-secondary transition-all active:scale-[0.98] shadow-lg shadow-primary/20"
+            >
+              Pesan Tiket
+            </button>
 
             <div className="text-center">
               <p className="text-on-surface-variant font-body-sm text-body-sm">Limited seats available. Secure yours now.</p>

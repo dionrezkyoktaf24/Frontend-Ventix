@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // Admin credentials for demo
 const ADMIN_EMAIL = "admin@ventix.com";
 const ADMIN_PASSWORD = "admin123";
+const AUTH_KEY = "ventix:auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next") ?? undefined;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,13 +30,20 @@ export default function LoginPage() {
     // Simulasi proses login
     setTimeout(() => {
       setIsSubmitting(false);
-      // Redirect admin ke dashboard
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        router.push("/admin/dashboard");
-        return;
+      const authPayload = {
+        isAuthenticated: true,
+        email: email.trim().toLowerCase(),
+        role: email === ADMIN_EMAIL ? "admin" : "user",
+        loggedAt: new Date().toISOString(),
+      };
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(AUTH_KEY, JSON.stringify(authPayload));
       }
+
       setLoginSuccess(true);
-      setTimeout(() => router.push("/dashboard"), 1000);
+      const redirectUrl = nextPath ?? (email === ADMIN_EMAIL ? "/admin/dashboard" : "/dashboard");
+      setTimeout(() => router.push(redirectUrl), 1000);
     }, 1500);
   };
 

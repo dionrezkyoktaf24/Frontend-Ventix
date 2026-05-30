@@ -12,6 +12,7 @@ type SelectedSeat = {
 
 const STORAGE_KEY_PREFIX = "ventix:selectedSeats:";
 const ORDER_KEY_PREFIX = "ventix:order:";
+const AUTH_KEY = "ventix:auth";
 
 function loadSelectedSeats(slug: string): SelectedSeat[] {
   if (typeof window === "undefined") return [];
@@ -33,6 +34,18 @@ function clearSelectedSeats(slug: string) {
   window.localStorage.removeItem(`${STORAGE_KEY_PREFIX}${slug}`);
 }
 
+function isUserAuthenticated() {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = window.localStorage.getItem(AUTH_KEY);
+    if (!raw) return false;
+    const auth = JSON.parse(raw);
+    return auth?.isAuthenticated === true;
+  } catch {
+    return false;
+  }
+}
+
 export default function CheckoutClient({ slug, event }: { slug: string; event: any }) {
   const [loading, setLoading] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState<SelectedSeat[]>([]);
@@ -40,13 +53,22 @@ export default function CheckoutClient({ slug, event }: { slug: string; event: a
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     setIsHydrated(true);
     if (!slug) return;
     setSelectedSeats(loadSelectedSeats(slug));
+    setIsAuthenticated(isUserAuthenticated());
   }, [slug]);
+
+  useEffect(() => {
+    if (!isHydrated || isAuthenticated === null || !slug) return;
+    if (!isAuthenticated) {
+      router.push(`/login?next=${encodeURIComponent(`/events/${slug}/checkout`)}`);
+    }
+  }, [isHydrated, isAuthenticated, slug, router]);
 
   const subtotal = useMemo(() => selectedSeats.reduce((acc, seat) => acc + seat.price, 0), [selectedSeats]);
   const serviceFee = 25000;
@@ -63,6 +85,10 @@ export default function CheckoutClient({ slug, event }: { slug: string; event: a
 
   const handlePayment = () => {
     if (!slug || selectedSeats.length === 0) return;
+    if (isAuthenticated === false) {
+      router.push(`/login?next=${encodeURIComponent(`/events/${slug}/checkout`)}`);
+      return;
+    }
     setLoading(true);
     const orderId = `ORD-${Date.now()}`;
     const orderPayload = {
@@ -88,6 +114,10 @@ export default function CheckoutClient({ slug, event }: { slug: string; event: a
 
   if (!isHydrated) {
     return <div className="p-6 text-slate-500">Loading checkout...</div>;
+  }
+
+  if (isAuthenticated === false) {
+    return <div className="p-6 text-slate-500">Anda harus login terlebih dahulu untuk melanjutkan checkout. Mengalihkan ke halaman login...</div>;
   }
 
   if (selectedSeats.length === 0) {
