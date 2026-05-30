@@ -3,12 +3,17 @@
 import Link from "next/link";
 import { useState } from "react";
 import Image from "next/image";
+<<<<<<< HEAD
 import { useRouter, useSearchParams } from "next/navigation";
 
 // Admin credentials for demo
 const ADMIN_EMAIL = "admin@ventix.com";
 const ADMIN_PASSWORD = "admin123";
 const AUTH_KEY = "ventix:auth";
+=======
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+>>>>>>> 0017dba170e3ec236006c07a9f45821aaae18ba9
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,13 +24,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSocialLogin = (provider: string) => {
     alert(`${provider} login belum tersedia. Silakan masuk menggunakan email dan password.`);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => { 
     e.preventDefault();
+<<<<<<< HEAD
     setIsSubmitting(true);
     // Simulasi proses login
     setTimeout(() => {
@@ -45,6 +52,26 @@ export default function LoginPage() {
       const redirectUrl = nextPath ?? (email === ADMIN_EMAIL ? "/admin/dashboard" : "/dashboard");
       setTimeout(() => router.push(redirectUrl), 1000);
     }, 1500);
+=======
+    try { setIsSubmitting(true);
+      const res = await api.post("/auth/login", { email, password });
+      const token = res.data.access_token;
+      localStorage.setItem("token", token);
+      setLoginSuccess(true);
+
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      if (payload.role === "ADMIN") {
+        router.push("/admin/dashboard");  
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Email atau password salah");
+    } finally {
+      setIsSubmitting(false);
+    }
+>>>>>>> 0017dba170e3ec236006c07a9f45821aaae18ba9
   };
 
   return (
@@ -175,6 +202,12 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {error && (
+                <div className="p-3 rounded-lg bg-red-50 border-red-200 text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -238,18 +271,6 @@ export default function LoginPage() {
                 Register for free
               </a>
             </p>
-
-            {/* Admin demo hint */}
-            <div className="mt-4 p-3 rounded-xl border text-center" style={{ backgroundColor: "#f1f3ff", borderColor: "rgba(199,196,216,0.4)" }}>
-              <p className="text-xs font-medium" style={{ color: "#464555" }}>
-                🔐 Demo Admin Login
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: "#777587" }}>
-                <span className="font-mono">admin@ventix.com</span> /{" "}
-                <span className="font-mono">admin123</span>
-              </p>
-            </div>
-
 
           {/* Footer for Form Section */}
           <footer className="mt-auto pt-stack-xl flex flex-wrap justify-center gap-stack-md">

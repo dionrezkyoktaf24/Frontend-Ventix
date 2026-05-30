@@ -1,13 +1,17 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SeatSelectionClient from "@/components/events/SeatSelectionClient";
-import mockEvents from "@/lib/mockEvents";
 
 export default async function SelectPage(props: any) {
   const { slug } = await props.params;
-  const event = mockEvents.find((e) => e.slug === slug);
+  const res = await fetch(`
+    https://event-hub-backend-production-20ee.up.railway.app/events/slug/${slug}`,
+    {
+      cache: "no-store",
+    }
+  )
 
-  if (!event) {
+  if (!res.ok) {
     return (
       <main>
         <Navbar />
@@ -16,6 +20,8 @@ export default async function SelectPage(props: any) {
       </main>
     );
   }
+
+  const event = await res.json();
 
   return (
     <main className="min-h-screen bg-background text-on-background font-body-md overflow-x-hidden">
