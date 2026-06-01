@@ -3,17 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import Image from "next/image";
-<<<<<<< HEAD
-import { useRouter, useSearchParams } from "next/navigation";
-
-// Admin credentials for demo
-const ADMIN_EMAIL = "admin@ventix.com";
-const ADMIN_PASSWORD = "admin123";
-const AUTH_KEY = "ventix:auth";
-=======
-import { useRouter } from "next/navigation";
+import { useRouter,useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
->>>>>>> 0017dba170e3ec236006c07a9f45821aaae18ba9
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,27 +23,6 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => { 
     e.preventDefault();
-<<<<<<< HEAD
-    setIsSubmitting(true);
-    // Simulasi proses login
-    setTimeout(() => {
-      setIsSubmitting(false);
-      const authPayload = {
-        isAuthenticated: true,
-        email: email.trim().toLowerCase(),
-        role: email === ADMIN_EMAIL ? "admin" : "user",
-        loggedAt: new Date().toISOString(),
-      };
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(AUTH_KEY, JSON.stringify(authPayload));
-      }
-
-      setLoginSuccess(true);
-      const redirectUrl = nextPath ?? (email === ADMIN_EMAIL ? "/admin/dashboard" : "/dashboard");
-      setTimeout(() => router.push(redirectUrl), 1000);
-    }, 1500);
-=======
     try { setIsSubmitting(true);
       const res = await api.post("/auth/login", { email, password });
       const token = res.data.access_token;
@@ -71,7 +41,6 @@ export default function LoginPage() {
     } finally {
       setIsSubmitting(false);
     }
->>>>>>> 0017dba170e3ec236006c07a9f45821aaae18ba9
   };
 
   return (

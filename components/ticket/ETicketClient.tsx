@@ -2,28 +2,27 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import mockEvents from "@/lib/mockEvents";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { api } from "@/lib/api";
 
-type OrderPayload = {
-  id: string;
-  slug: string;
-  seats: Array<{ id: string; category: string; price: number }>;
-  subtotal: number;
-  serviceFee: number;
-  tax: number;
-  discount?: number;
-  total: number;
-  paymentMethod: string;
+type Booking = {
+  id: number;
+  invoiceCode: string;
+  totalPrice: number;
+  paymentStatus: string;
   createdAt: string;
+  event: {
+    title: string;
+    date: string;
+    location: string;
+    category: string;
+  };
+  tickets: Array<{
+    id: number;
+    qrCode: string;
+    seat: { seatNumber: string};
+  }>
 };
-
-const ORDER_KEY_PREFIX = "ventix:order:";
-
-function formatOrderCode(orderId: string) {
-  const suffix = orderId.replace(/^ORD-/, "");
-  return `VTX-${suffix.slice(-6).toUpperCase()}`;
-}
 
 function calculateCountdown(eventDate: Date) {
   const now = new Date();
@@ -34,32 +33,31 @@ function calculateCountdown(eventDate: Date) {
 }
 
 export default function ETicketClient({ orderId }: { orderId: string }) {
-  const router = useRouter();
-  const [order, setOrder] = useState<OrderPayload | null>(null);
+  const [booking, setBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
-    if (!orderId) return;
-    try {
-      const raw = window.localStorage.getItem(`${ORDER_KEY_PREFIX}${orderId}`);
-      if (!raw) return;
-      const parsed: OrderPayload = JSON.parse(raw);
-      setOrder(parsed);
-    } catch {
-      setOrder(null);
+    const fetchBooking = async () => {
+      try {
+        const token = localStorage.getItem("Token"); 
+        const res = await api.get(`/bookings/${orderId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setBooking(res.data);
+      } catch {
+        setBooking(null);
+      }
     }
+    fetchBooking();
   }, [orderId]);
 
-  const event = order ? mockEvents.find((item) => item.slug === order.slug) : null;
-
   const eventDate = useMemo(() => {
-    if (!event) return new Date();
-    const time = event.time ? event.time : "19:00";
-    return new Date(`${event.date}T${time}:00`);
-  }, [event]);
+    if (!booking) return new Date();
+    return new Date(booking.event.date);
+  }, [booking]);
 
   const countdown = useMemo(() => calculateCountdown(eventDate), [eventDate]);
 
-  if (!order) {
+  if (!booking) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-16 text-center text-slate-500">
         <p className="text-lg font-semibold">Order tidak ditemukan</p>
@@ -75,7 +73,7 @@ export default function ETicketClient({ orderId }: { orderId: string }) {
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-violet-700">{countdown}</p>
             <h1 className="text-3xl font-semibold text-slate-950 sm:text-4xl">Your E-Ticket</h1>
-            <p className="text-sm text-slate-500">Order {formatOrderCode(order.id)}</p>
+            <p className="text-sm text-slate-500">Order {booking.invoiceCode}</p>
           </div>
           <button
             type="button"
@@ -90,12 +88,12 @@ export default function ETicketClient({ orderId }: { orderId: string }) {
           <div className="relative overflow-hidden bg-gradient-to-r from-violet-700 via-indigo-700 to-slate-950 px-8 py-8 text-white sm:px-12 sm:py-10">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-2xl">
-                <span className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/80">{event?.category ?? "Event Category"}</span>
-                <h2 className="mt-5 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{event?.title ?? "Unknown Event"}</h2>
+                <span className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/80">{booking.event.category ?? "Event Category"}</span>
+                <h2 className="mt-5 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{booking.event.title ?? "Unknown Event"}</h2>
               </div>
               <div className="rounded-[28px] border border-white/20 bg-white/10 px-4 py-3 text-right text-sm text-white shadow-lg shadow-black/20 sm:px-6">
                 <p className="text-[0.7rem] uppercase tracking-[0.35em] text-white/70">VIP PASS</p>
-                <p className="mt-3 text-3xl font-semibold">{order.seats.length}x</p>
+                <p className="mt-3 text-3xl font-semibold">{booking.tickets.length}x</p>
               </div>
             </div>
 
@@ -119,22 +117,22 @@ export default function ETicketClient({ orderId }: { orderId: string }) {
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Date</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-950">{event?.date ? new Date(event.date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" }) : "-"}</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-950">{booking.event.date ? new Date(booking.event.date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" }) : "-"}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Time</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-950">{event?.time ?? "19:00"} GMT+7</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-950">19:00 GMT+7</p>
                   </div>
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Venue</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-950">{event?.venue ?? event?.location ?? "Unknown Venue"}</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-950">{booking.event.location ?? "Unknown Venue"}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Seat / Row</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-950">{order.seats.map((seat) => seat.id).join(" · ")}</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-950">{booking.tickets.map((t) => t.seat.seatNumber).join(" · ")}</p>
                   </div>
                 </div>
 
@@ -160,7 +158,7 @@ export default function ETicketClient({ orderId }: { orderId: string }) {
                     <div className="grid h-full w-full place-items-center rounded-[24px] bg-white text-slate-950">QR</div>
                   </div>
                   <p className="text-sm uppercase tracking-[0.25em] text-slate-400">Encrypted Token</p>
-                  <p className="mt-3 text-lg font-semibold">#{formatOrderCode(order.id).replace("VTX-", "")}</p>
+                  <p className="mt-3 text-lg font-semibold">#{booking.invoiceCode.slice(-6).toUpperCase()}</p>
                   <p className="mt-4 text-xs text-slate-400">Keep screen brightness high for scanning</p>
                 </div>
                 <div className="rounded-[24px] border border-slate-200 bg-slate-100 px-4 py-3 text-center text-xs tracking-[0.12em] text-slate-500">

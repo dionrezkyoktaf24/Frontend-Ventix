@@ -3,15 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 type Seat = {
-  id: string;
-  category: string;
-  price: number;
-  occupied: boolean;
+  id: number;
+  seatNumber: string;
+  status: string;
+  eventId: number;
 };
 
-type SelectedSeat = Omit<Seat, "occupied">;
+type SelectedSeat = {
+  id: number;
+  seatNumber: string;
+  price: number;
+}
 
 const STORAGE_KEY_PREFIX = "ventix:selectedSeats:";
 
@@ -47,36 +52,31 @@ export default function SeatSelectionClient({ slug, event }: { slug: string; eve
 
   if (!event) return <div className="p-8">Event not found</div>;
 
-  const seats: Seat[] = useMemo(
-    () => [
-      { id: "A1", category: "VIP", price: 2500000, occupied: false },
-      { id: "A2", category: "VIP", price: 2500000, occupied: false },
-      { id: "A3", category: "VIP", price: 2500000, occupied: true },
-      { id: "A4", category: "VIP", price: 2500000, occupied: false },
-      { id: "B1", category: "Regular", price: 1200000, occupied: false },
-      { id: "B2", category: "Regular", price: 1200000, occupied: false },
-      { id: "B3", category: "Regular", price: 1200000, occupied: false },
-      { id: "B4", category: "Regular", price: 1200000, occupied: true },
-      { id: "C1", category: "Economy", price: 750000, occupied: false },
-      { id: "C2", category: "Economy", price: 750000, occupied: false },
-      { id: "C3", category: "Economy", price: 750000, occupied: false },
-      { id: "C4", category: "Economy", price: 750000, occupied: true },
-    ],
-    []
-  );
+  const [seats, setSeats] = useState<Seat[]>([]);
+
+  useEffect(() => {
+    if (!event?.id) return;
+    const fetchSeats = async () => {
+      try {
+        const res = await api.get(`/events/${event.id}/seats`);
+        setSeats(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchSeats();
+  }, [event?.id]);
 
   const toggleSeat = (seat: Seat) => {
-    if (seat.occupied) return;
+    if (seat.status === "BOOKED") return;
     setSelectedSeats((current) => {
       const exists = current.find((item) => item.id === seat.id);
-      if (exists) {
-        return current.filter((item) => item.id !== seat.id);
-      }
-      return [...current, { id: seat.id, category: seat.category, price: seat.price }];
-    });
+      if (exists) return current.filter((item) => item.id !== seat.id);
+      return [...current, { id: seat.id, seatNumber: seat.seatNumber, price: event.price }];
+    })
   };
 
-  const removeSeat = (id: string) => {
+  const removeSeat = (id: number) => {
     setSelectedSeats((current) => current.filter((seat) => seat.id !== id));
   };
 
@@ -114,49 +114,35 @@ export default function SeatSelectionClient({ slug, event }: { slug: string; eve
               </div>
 
               <div className="space-y-4">
-                {['A', 'B', 'C'].map((row) => (
+                {['A', 'B', 'C', 'D'].map((row) => (
                   <div key={row} className="flex justify-center gap-4">
-                    {seats.filter((seat) => seat.id.startsWith(row)).map((seat) => {
-                      const isSelected = selectedSeats.some((item) => item.id === seat.id);
-                      return (
-                        <button
-                          key={seat.id}
-                          type="button"
-                          onMouseEnter={() => setHoverInfo({ id: seat.id, price: seat.price })}
-                          onMouseLeave={() => setHoverInfo(null)}
-                          onClick={() => toggleSeat(seat)}
-                          disabled={seat.occupied}
-                          className={`relative flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-3xl border text-xs font-semibold transition-all duration-200 ${
-                            seat.occupied
+                    {seats
+                      .filter((seat) => seat.seatNumber.startsWith(row))
+                      .map((seat) => {
+                        const isSelected = selectedSeats.some((item) => item.id === seat.id);
+                        const isOccupied = seat.status === "BOOKED";
+                        return (
+                          <button
+                            key={seat.id}
+                            type="button"
+                            onMouseEnter={() => setHoverInfo({ id: String(seat.id), price: event.price })}
+                            onMouseLeave={() => setHoverInfo(null)}
+                            onClick={() => toggleSeat(seat)}
+                            disabled={isOccupied}
+                            className={`relative flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-3xl border text-xs font-semibold transition-all duration-200 ${isOccupied
                               ? 'cursor-not-allowed border-rose-200 bg-rose-100 text-rose-700'
                               : isSelected
-                              ? 'border-amber-300 bg-amber-400 text-slate-950 shadow-[0_20px_40px_-20px_rgba(245,158,11,0.8)]'
-                              : 'border-slate-200 bg-emerald-100 text-slate-900 hover:-translate-y-1 hover:bg-emerald-200'
-                          }`}
-                        >
-                          <span>{seat.id}</span>
-                          <span className="text-[10px] text-slate-500">{seat.category}</span>
-                          {seat.occupied && <span className="absolute -top-2 right-0 rounded-full bg-rose-500 px-1 text-[10px] text-white">X</span>}
-                        </button>
-                      );
-                    })}
+                                ? 'border-amber-300 bg-amber-400 text-slate-950 shadow-[0_20px_40px_-20px_rgba(245,158,11,0.8)]'
+                                : 'border-slate-200 bg-emerald-100 text-slate-900 hover:-translate-y-1 hover:bg-emerald-200'
+                              }`}
+                          >
+                            <span>{seat.seatNumber}</span>
+                            {isOccupied && <span className="absolute -top-2 right-0 rounded-full bg-rose-500 px-1 text-[10px] text-white">X</span>}
+                          </button>
+                        );
+                      })}
                   </div>
                 ))}
-              </div>
-
-              <div className="mt-8 grid grid-cols-3 gap-4 text-center text-sm text-slate-700">
-                <div className="rounded-3xl bg-white p-4 shadow-sm">
-                  <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">VIP</div>
-                  <div className="font-semibold">{formatCurrency(2500000)}</div>
-                </div>
-                <div className="rounded-3xl bg-white p-4 shadow-sm">
-                  <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">Regular</div>
-                  <div className="font-semibold">{formatCurrency(1200000)}</div>
-                </div>
-                <div className="rounded-3xl bg-white p-4 shadow-sm">
-                  <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-400">Economy</div>
-                  <div className="font-semibold">{formatCurrency(750000)}</div>
-                </div>
               </div>
             </div>
           </div>
@@ -181,8 +167,7 @@ export default function SeatSelectionClient({ slug, event }: { slug: string; eve
                     <div key={seat.id} className="rounded-3xl border border-slate-200 p-4 shadow-sm">
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <div className="text-base font-semibold">{seat.id}</div>
-                          <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{seat.category}</div>
+                          <div className="text-base font-semibold">{seat.seatNumber}</div>
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-slate-900">{formatCurrency(seat.price)}</div>
@@ -206,11 +191,10 @@ export default function SeatSelectionClient({ slug, event }: { slug: string; eve
                 type="button"
                 disabled={selectedSeats.length === 0}
                 onClick={() => router.push(`/events/${slug}/checkout`)}
-                className={`w-full rounded-3xl px-5 py-4 text-sm font-semibold transition-all duration-200 ${
-                  selectedSeats.length === 0
-                    ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                    : 'bg-violet-600 text-white shadow-xl shadow-violet-500/20 hover:bg-violet-700 active:scale-[0.98]'
-                }`}
+                className={`w-full rounded-3xl px-5 py-4 text-sm font-semibold transition-all duration-200 ${selectedSeats.length === 0
+                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                  : 'bg-violet-600 text-white shadow-xl shadow-violet-500/20 hover:bg-violet-700 active:scale-[0.98]'
+                  }`}
               >
                 {selectedSeats.length === 0 ? 'Select seats first' : 'Proceed to Payment →'}
               </button>

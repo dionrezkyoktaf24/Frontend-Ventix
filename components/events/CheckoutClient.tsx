@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
 type SelectedSeat = {
   id: string;
@@ -11,8 +12,6 @@ type SelectedSeat = {
 };
 
 const STORAGE_KEY_PREFIX = "ventix:selectedSeats:";
-const ORDER_KEY_PREFIX = "ventix:order:";
-const AUTH_KEY = "ventix:auth";
 
 function loadSelectedSeats(slug: string): SelectedSeat[] {
   if (typeof window === "undefined") return [];
@@ -21,28 +20,6 @@ function loadSelectedSeats(slug: string): SelectedSeat[] {
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
-  }
-}
-
-function saveOrder(orderId: string, payload: any) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(`${ORDER_KEY_PREFIX}${orderId}`, JSON.stringify(payload));
-}
-
-function clearSelectedSeats(slug: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(`${STORAGE_KEY_PREFIX}${slug}`);
-}
-
-function isUserAuthenticated() {
-  if (typeof window === "undefined") return false;
-  try {
-    const raw = window.localStorage.getItem(AUTH_KEY);
-    if (!raw) return false;
-    const auth = JSON.parse(raw);
-    return auth?.isAuthenticated === true;
-  } catch {
-    return false;
   }
 }
 
@@ -60,7 +37,8 @@ export default function CheckoutClient({ slug, event }: { slug: string; event: a
     setIsHydrated(true);
     if (!slug) return;
     setSelectedSeats(loadSelectedSeats(slug));
-    setIsAuthenticated(isUserAuthenticated());
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
   }, [slug]);
 
   useEffect(() => {
@@ -83,33 +61,36 @@ export default function CheckoutClient({ slug, event }: { slug: string; event: a
     }
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    
     if (!slug || selectedSeats.length === 0) return;
     if (isAuthenticated === false) {
       router.push(`/login?next=${encodeURIComponent(`/events/${slug}/checkout`)}`);
       return;
     }
     setLoading(true);
-    const orderId = `ORD-${Date.now()}`;
-    const orderPayload = {
-      id: orderId,
-      slug,
-      seats: selectedSeats,
-      subtotal,
-      serviceFee,
-      tax,
-      discount,
-      total,
-      paymentMethod,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const token = localStorage.getItem("token");
+      const seatIds = selectedSeats.map((seat) => Number(seat.id));
 
-    setTimeout(() => {
-      clearSelectedSeats(slug);
-      saveOrder(orderId, orderPayload);
+      const res = await api.post(
+        "/bookings",
+        { eventId: event.id, seatIds},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const { orderId } = res.data;
+      await api.post(
+        `/bookings/${orderId}/pay`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Berhasil melakukan pembayaran. Tiket sudah tersedia di dashboard.");
+      router.push(`/dashboard`);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Terjadi kesalahan saat memproses pembayaran. Silakan coba lagi.");
+    } finally {
       setLoading(false);
-      router.push(`/tickets/${orderId}`);
-    }, 1200);
+    }
   };
 
   if (!isHydrated) {
@@ -247,7 +228,6 @@ export default function CheckoutClient({ slug, event }: { slug: string; event: a
                   {selectedSeats.map((seat) => (
                     <div key={seat.id} className="flex items-center justify-between rounded-3xl border border-slate-200/80 bg-slate-50 px-4 py-4">
                       <div>
-                        <p className="font-semibold text-slate-950">{seat.category}</p>
                         <p className="text-sm text-slate-500">Seat {seat.id}</p>
                       </div>
                       <p className="font-semibold text-slate-900">{formatCurrency(seat.price)}</p>

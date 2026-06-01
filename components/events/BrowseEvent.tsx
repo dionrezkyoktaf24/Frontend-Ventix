@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import EventCard from "@/components/events/EventCard";
-import mockEvents from "@/lib/mockEvents";
+import { api } from "@/lib/api";
 
-const events = mockEvents;
 const pageSize = 8;
 
 const priceOptions = [
@@ -18,27 +17,8 @@ const priceOptions = [
 
 export default function BrowseEvent() {
   const searchParams = useSearchParams();
-  const categories = useMemo(
-    () => ["All", ...Array.from(new Set(events.map((event) => event.category)))],
-    []
-  );
-  const dateOptions = useMemo(
-    () => [
-      "All",
-      ...Array.from(
-        new Set(
-          events.map((event) =>
-            new Date(event.date).toLocaleDateString("id-ID", {
-              month: "long",
-              year: "numeric",
-            })
-          )
-        )
-      ),
-    ],
-    []
-  );
-
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeDate, setActiveDate] = useState("All");
@@ -47,20 +27,48 @@ export default function BrowseEvent() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    if (!searchParams) return;
-    setQuery(searchParams.get("q") ?? "");
+    const fetchEvents = async () => {
+      try {
+        const res = await api.get("/events");
+        const data = Array.isArray(res.data) ? res.data : res.data.data ?? [];
+        setEvents(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
 
-    const categoryParam = searchParams.get("category")?.toLowerCase() ?? "";
-    const matchedCategory = categories.find(
-      (category) => category.toLowerCase() === categoryParam
-    );
-    setActiveCategory(matchedCategory ?? "All");
-    setCurrentPage(1);
-  }, [searchParams, categories]);
+  useEffect(() => {
+    console.log("events", events);
+  }, [events]);
+
+  const categories = useMemo(
+    () => ["All", ...Array.from(new Set(events.map((event) => event.category)))],
+    [events]
+  );
+
+  const dateOptions = useMemo(
+    () => [
+      "ALL",
+      ...Array.from(
+        new Set(
+          events.map((event) =>
+            new Date(event.date).toLocaleDateString("id-ID", {
+              month: "long",
+              year: "numeric",
+            }))
+        )
+      ),
+    ],
+    [events]
+  )
 
   const filteredEvents = useMemo(() => {
     const q = query.trim().toLowerCase();
-
+    console.log("events di filter:", events.length, "query:", q, "category:", activeCategory, "date:", activeDate, "price:", activePrice);
     return events.filter((event) => {
       if (activeCategory !== "All" && event.category !== activeCategory) {
         return false;
@@ -91,7 +99,7 @@ export default function BrowseEvent() {
         event.location.toLowerCase().includes(q)
       );
     });
-  }, [query, activeCategory, activeDate, activePrice]);
+  }, [query, activeCategory, activeDate, activePrice, events]);
 
   const sortedEvents = useMemo(() => {
     const sorted = [...filteredEvents];
@@ -106,6 +114,8 @@ export default function BrowseEvent() {
 
   const pageCount = Math.max(1, Math.ceil(sortedEvents.length / pageSize));
   const pageEvents = sortedEvents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  console.log("filteredEvents", filteredEvents);
+  console.log("pageEvents", pageEvents);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -199,34 +209,34 @@ export default function BrowseEvent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {pageEvents.length === 0 ? (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
-            <div className="w-40 h-40 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-              <span className="material-symbols-outlined text-6xl text-gray-400">search_off</span>
-            </div>
-            <h2 className="text-2xl font-semibold mb-2">No events found</h2>
-            <p className="text-gray-500 mb-6 max-w-sm">
-              We couldn't find any events matching your criteria. Try adjusting your filters or search terms.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setQuery("");
-                setActiveCategory("All");
-                setActiveDate("All");
-                setActivePrice("All");
-                setSortBy("Most Relevant");
-              }}
-              className="border border-[#4F46E5] text-[#4F46E5] px-6 py-2 rounded-full"
-            >
-              Clear All Filters
-            </button>
+      {loading ? (
+        <div className="col-span-full py-20 text-center text-gray-500">Memuat event...</div>
+      ) : pageEvents.length === 0 ? (
+        <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
+          <div className="w-40 h-40 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+            <span className="material-symbols-outlined text-6xl text-gray-400">search_off</span>
           </div>
-        ) : (
-          pageEvents.map((event) => <EventCard key={event.id} {...event} />)
-        )}
-      </div>
+          <h2 className="text-2xl font-semibold mb-2">No events found</h2>
+          <p className="text-gray-500 mb-6 max-w-sm">
+            We couldn't find any events matching your criteria.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setActiveCategory("All");
+              setActiveDate("All");
+              setActivePrice("All");
+              setSortBy("Most Relevant");
+            }}
+            className="border border-[#4F46E5] text-[#4F46E5] px-6 py-2 rounded-full"
+          >
+            Clear All Filters
+          </button>
+        </div>
+      ) : (
+        pageEvents.map((event) => <EventCard key={event.id} {...event} />)
+      )}
 
       <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
         <button

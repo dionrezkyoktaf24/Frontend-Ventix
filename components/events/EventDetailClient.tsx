@@ -3,27 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
-
-const AUTH_KEY = "ventix:auth";
-
-function isAuthenticated() {
-  if (typeof window === "undefined") return false;
-  try {
-    const raw = window.localStorage.getItem(AUTH_KEY);
-    if (!raw) return false;
-    const auth = JSON.parse(raw);
-    return auth?.isAuthenticated === true;
-  } catch {
-    return false;
-  }
-}
+import { useAuth } from "@/context/AuthContext";
 
 export default function EventDetailClient({ event }: { event: any }) {
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleOrderClick = () => {
-    if (!isAuthenticated()) {
-      router.push(`/login?next=${encodeURIComponent(`/events/${event.slug}/select`)}`);
+    if (!user) {
+      router.push(`/register?next=${encodeURIComponent(`/events/${event.slug}/select`)}`);
       return;
     }
     router.push(`/events/${event.slug}/select`);

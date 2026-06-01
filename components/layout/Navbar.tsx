@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Menu, X, Ticket, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext"
 
 const navLinks = [
   { label: "Events", href: "/events" },
@@ -14,6 +15,7 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -62,16 +64,25 @@ export default function Navbar() {
 
           {/* Desktop Auth */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-gray-600">
-                Masuk
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm">
-                Daftar Gratis
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link href={user.role === "ADMIN" ? "/admin/dashboard" : "/dashboard"}>
+                  <Button variant="ghost" size="sm">{user.name}</Button>
+                </Link>
+                <Button size="sm" variant="secondary" onClick={logout}>
+                  Keluar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm" className="text-gray-600">Masuk</Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm">Daftar Gratis</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -100,14 +111,25 @@ export default function Navbar() {
               ))}
             </div>
             <div className="flex flex-col gap-2 px-4 pt-3 border-t border-gray-100">
-              <Link href="/login" onClick={() => setIsOpen(false)}>
-                <Button variant="secondary" className="w-full">
-                  Masuk
-                </Button>
-              </Link>
-              <Link href="/register" onClick={() => setIsOpen(false)}>
-                <Button className="w-full">Daftar Gratis</Button>
-              </Link>
+              {user ? (
+                <>
+                  <Link href={user.role === "ADMIN" ? "/admin/dashboard" : "/dashboard"} onClick={() => setIsOpen(false)}>
+                    <Button variant="secondary" className="w-full">{user.name}</Button>
+                  </Link>
+                  <Button className="w-full" onClick={() => { logout(); setIsOpen(false); }}>
+                    Keluar
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" onClick={() => setIsOpen(false)}>
+                    <Button variant="secondary" className="w-full">Masuk</Button>
+                  </Link>
+                  <Link href="/register" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full">Daftar Gratis</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
