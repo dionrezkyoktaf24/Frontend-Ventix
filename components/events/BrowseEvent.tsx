@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import EventCard from "@/components/events/EventCard";
 import { api } from "@/lib/api";
 
@@ -16,7 +15,6 @@ const priceOptions = [
 ];
 
 export default function BrowseEvent() {
-  const searchParams = useSearchParams();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");

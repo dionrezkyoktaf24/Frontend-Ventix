@@ -4,13 +4,11 @@ import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function AdminEditEventPage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const id = searchParams.get("id");
-
+    const [id, setId] = useState<string | null | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [title, setTitle] = useState("");
@@ -26,7 +24,18 @@ export default function AdminEditEventPage() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        if (!id) return;
+        const params = new URLSearchParams(window.location.search);
+        setId(params.get("id"));
+    }, []);
+
+    useEffect(() => {
+        if (id === undefined) return;
+        if (!id) {
+            setError("ID event tidak ditemukan");
+            setFetching(false);
+            return;
+        }
+
         const fetchEvent = async () => {
             try {
                 const token = localStorage.getItem("token");
@@ -89,6 +98,7 @@ export default function AdminEditEventPage() {
     };
 
     if (fetching) return <div className="p-8 text-center">Memuat data event...</div>;
+    if (!id) return <div className="p-8 text-center">ID event tidak ditemukan.</div>;
 
     return (
         <main className="min-h-screen bg-white text-slate-900">
