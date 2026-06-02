@@ -16,6 +16,8 @@ type Booking = {
     date: string;
     location: string;
     category: string;
+    time?: string;
+    slug?: string;
   };
   tickets: Array<{
     id: number;
