@@ -19,7 +19,7 @@ export default function ContactPage() {
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-sm border border-gray-200">
               <h2 className="text-lg font-semibold text-slate-900">Telepon</h2>
-              <p className="mt-3 text-sm text-gray-600">+62 812-3456-7890</p>
+              <p className="mt-3 text-sm text-gray-600">+62 812-3414-1811</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-sm border border-gray-200">
               <h2 className="text-lg font-semibold text-slate-900">Alamat</h2>
