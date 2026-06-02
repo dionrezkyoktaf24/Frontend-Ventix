@@ -61,7 +61,7 @@ export default function EventDetailClient({ event }: { event: any }) {
     <div className="max-w-container-max mx-auto px-margin-desktop py-stack-lg">
       {/* Hero */}
       <section className="relative h-125 w-full rounded-xl overflow-hidden mb-stack-lg">
-        <img src={event.image} alt="Event Banner" className="w-full h-full object-cover" />
+        <img src= "/pexel.jpg" alt="Event Banner" className="w-full h-full object-cover" />
         <div className="absolute inset-0 hero-gradient flex flex-col justify-end p-stack-lg">
           <div className="flex flex-wrap items-center gap-3 mb-4">
             {tags.map((t: string) => (
