@@ -128,7 +128,7 @@ export default function EventDetailClient({ event }: { event: any }) {
           <section>
             <h2 className="font-headline-lg text-headline-lg mb-stack-md text-primary">Location</h2>
             <div className="w-full h-80 rounded-xl overflow-hidden bg-surface-container-high relative group">
-              <img alt="Map View" className="w-full h-full object-cover filter grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxs5yF0lkGA6O005-iGJOWqnVQ-nUTtDoyJkzYvF5DDoTdubw1Rel1F0CU2iH_QjEq0H7S-3O9b85Ab2OSOdcYlH3U1yT_GuuVAAPEkWoxOrH-Adxheb2-chv9zogvb4siNRPlGySBVlWkWVXV-P7Q1ABhmAG4Nw8JZ_8s2Mmv5WJ-o5_5nemp8wkuORPmiFY7oWF2-4yMRMVjfFV1NgjGqdlq6WtaooQaRxrKpDSEf8bIjym_QnC95nC3Okh3ZDsZSs6FQhzYAv6-" />
+            <img src="/maplok.png" alt="Event Location Map" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-primary/10 group-hover:bg-primary/5 transition-all"></div>
               <div className="absolute bottom-6 left-6 glass-card p-4 rounded-lg shadow-xl">
                 <p className="font-label-md text-label-md text-on-surface">{event.location}</p>
