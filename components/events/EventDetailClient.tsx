@@ -10,6 +10,10 @@ export default function EventDetailClient({ event }: { event: any }) {
   const { user } = useAuth();
 
   const handleOrderClick = () => {
+    if (ended) {
+      alert("Event sudah berakhir dan tidak bisa dipesan.");
+      return;
+    }
     if (!user) {
       router.push(`/register?next=${encodeURIComponent(`/events/${event.slug}/select`)}`);
       return;
@@ -18,6 +22,7 @@ export default function EventDetailClient({ event }: { event: any }) {
   };
   const [timeLeft, setTimeLeft] = useState({ days: "00", hours: "00", minutes: "00", seconds: "00" });
   const [started, setStarted] = useState(false);
+  const [ended, setEnded] = useState(false);
 
   useEffect(() => {
     if (!event) return;
@@ -29,12 +34,22 @@ export default function EventDetailClient({ event }: { event: any }) {
     const tick = () => {
       const now = Date.now();
       const distance = target - now;
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      // ended if now is more than one day after target
+      if (now > target + oneDayMs) {
+        setTimeLeft({ days: "00", hours: "00", minutes: "00", seconds: "00" });
+        setStarted(false);
+        setEnded(true);
+        return;
+      }
       if (distance <= 0) {
         setTimeLeft({ days: "00", hours: "00", minutes: "00", seconds: "00" });
         setStarted(true);
+        setEnded(false);
         return;
       }
       setStarted(false);
+      setEnded(false);
       const days = Math.floor(distance / (1000 * 60 * 60 * 24));
       const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
@@ -78,7 +93,9 @@ export default function EventDetailClient({ event }: { event: any }) {
 
       {/* Countdown */}
       <div className="mb-4">
-        <p className="text-sm font-semibold text-primary">{started ? "Event sedang berlangsung" : "Countdown to event"}</p>
+        <p className="text-sm font-semibold text-primary">
+          {ended ? "Event Sudah Berakhir" : started ? "Event sedang berlangsung" : "Countdown to event"}
+        </p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-stack-xl">
         <div className="bg-surface-container-low p-6 rounded-lg text-center premium-shadow">
@@ -187,9 +204,10 @@ export default function EventDetailClient({ event }: { event: any }) {
             <button
               type="button"
               onClick={handleOrderClick}
-              className="w-full inline-flex justify-center bg-primary text-on-primary py-4 rounded-xl font-headline-md text-headline-md hover:bg-secondary transition-all active:scale-[0.98] shadow-lg shadow-primary/20"
+              disabled={ended}
+              className={`w-full inline-flex justify-center bg-primary text-on-primary py-4 rounded-xl font-headline-md text-headline-md ${ended ? 'opacity-50 cursor-not-allowed' : 'hover:bg-secondary'} transition-all active:scale-[0.98] shadow-lg shadow-primary/20`}
             >
-              Pesan Tiket
+              {ended ? 'Event Sudah Berakhir' : 'Pesan Tiket'}
             </button>
 
             <div className="text-center">
