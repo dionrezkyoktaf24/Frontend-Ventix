@@ -24,16 +24,10 @@ type Booking = {
   }>
 };
 
-function calculateCountdown(eventDate: Date) {
-  const now = new Date();
-  const diffMs = eventDate.getTime() - now.getTime();
-  if (diffMs <= 0) return "LIVE NOW";
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  return `LIVE IN ${days} DAY${days === 1 ? "" : "S"}`;
-}
-
 export default function ETicketClient({ orderId }: { orderId: string }) {
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [timeLeft, setTimeLeft] = useState({ days: "00", hours: "00", minutes: "00", seconds: "00" });
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -50,12 +44,38 @@ export default function ETicketClient({ orderId }: { orderId: string }) {
     fetchBooking();
   }, [orderId]);
 
-  const eventDate = useMemo(() => {
-    if (!booking) return new Date();
-    return new Date(booking.event.date);
-  }, [booking]);
+  useEffect(() => {
+    if (!booking) return;
+    const { parseEventDate } = require("@/lib/utils");
+    const dt = parseEventDate(booking.event?.date, booking.event?.time || "19:00");
+    if (!dt) return;
+    const target = dt.getTime();
 
-  const countdown = useMemo(() => calculateCountdown(eventDate), [eventDate]);
+    const tick = () => {
+      const now = Date.now();
+      const distance = target - now;
+      if (distance <= 0) {
+        setTimeLeft({ days: "00", hours: "00", minutes: "00", seconds: "00" });
+        setStarted(true);
+        return;
+      }
+      setStarted(false);
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      setTimeLeft({
+        days: String(days).padStart(2, "0"),
+        hours: String(hours).padStart(2, "0"),
+        minutes: String(minutes).padStart(2, "0"),
+        seconds: String(seconds).padStart(2, "0"),
+      });
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [booking]);
 
   if (!booking) {
     return (
@@ -70,8 +90,8 @@ export default function ETicketClient({ orderId }: { orderId: string }) {
     <div className="bg-slate-50 py-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 flex flex-col gap-4 rounded-[32px] border border-slate-200 bg-white p-6 shadow-lg sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-violet-700">{countdown}</p>
+            <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-violet-700">{started ? "Event sedang berlangsung" : `LIVE IN ${timeLeft.days}D ${timeLeft.hours}H`}</p>
             <h1 className="text-3xl font-semibold text-slate-950 sm:text-4xl">Your E-Ticket</h1>
             <p className="text-sm text-slate-500">Order {booking.invoiceCode}</p>
           </div>
@@ -99,12 +119,12 @@ export default function ETicketClient({ orderId }: { orderId: string }) {
 
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {[
-                { label: "Days", value: 3 },
-                { label: "Hours", value: 14 },
-                { label: "Mins", value: 22 },
+                { label: "Days", value: timeLeft.days },
+                { label: "Hours", value: timeLeft.hours },
+                { label: "Mins", value: timeLeft.minutes },
               ].map((item) => (
                 <div key={item.label} className="rounded-[28px] border border-white/20 bg-white/10 px-5 py-4 text-center">
-                  <p className="text-3xl font-semibold">{item.value.toString().padStart(2, "0")}</p>
+                  <p className="text-3xl font-semibold">{item.value}</p>
                   <p className="text-xs uppercase tracking-[0.25em] text-white/80">{item.label}</p>
                 </div>
               ))}

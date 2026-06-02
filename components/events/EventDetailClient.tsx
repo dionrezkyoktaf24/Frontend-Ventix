@@ -17,14 +17,24 @@ export default function EventDetailClient({ event }: { event: any }) {
     router.push(`/events/${event.slug}/select`);
   };
   const [timeLeft, setTimeLeft] = useState({ days: "00", hours: "00", minutes: "00", seconds: "00" });
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
     if (!event) return;
-    const target = new Date(`${event.date}T${event.time || "19:00"}:00`).getTime();
+    const { parseEventDate } = require("@/lib/utils");
+    const dt = parseEventDate(event.date, event.time || "19:00");
+    if (!dt) return;
+    const target = dt.getTime();
 
     const tick = () => {
       const now = Date.now();
-      const distance = Math.max(0, target - now);
+      const distance = target - now;
+      if (distance <= 0) {
+        setTimeLeft({ days: "00", hours: "00", minutes: "00", seconds: "00" });
+        setStarted(true);
+        return;
+      }
+      setStarted(false);
       const days = Math.floor(distance / (1000 * 60 * 60 * 24));
       const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
@@ -67,6 +77,9 @@ export default function EventDetailClient({ event }: { event: any }) {
       </section>
 
       {/* Countdown */}
+      <div className="mb-4">
+        <p className="text-sm font-semibold text-primary">{started ? "Event sedang berlangsung" : "Countdown to event"}</p>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-stack-xl">
         <div className="bg-surface-container-low p-6 rounded-lg text-center premium-shadow">
           <div className="font-display-lg text-display-lg text-primary">{timeLeft.days}</div>

@@ -111,7 +111,7 @@ function DashboardView({ setActiveNav }: { setActiveNav: (nav: string) => void }
                       booking.paymentStatus === "CANCELLED" ? "bg-red-100 text-red-800" :
                         "bg-amber-100 text-amber-800"
                       }`}>{booking.paymentStatus}</span>
-                    <Link href={`/bookings/${booking.id}`} className="bg-[#4b41e1] text-white px-4 py-2 rounded-lg font-['Inter',_sans-serif] hover:brightness-110 transition-all text-sm">Details</Link>
+                    <Link href={booking.paymentStatus === "PAID" ? `/tickets/${booking.id}` : `/bookings/${booking.id}/pay`} className="bg-[#4b41e1] text-white px-4 py-2 rounded-lg font-['Inter',_sans-serif] hover:brightness-110 transition-all text-sm">Details</Link>
                   </div>
                 </div>
               </div>
@@ -157,9 +157,9 @@ function DashboardView({ setActiveNav }: { setActiveNav: (nav: string) => void }
                       }`}>{booking.paymentStatus}</span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <Link href={`/bookings/${booking.id}`} className="text-[#4b41e1] hover:text-[#4d41df] transition-colors">
-                      <span className="material-symbols-outlined">visibility</span>
-                    </Link>
+                    <Link href={booking.paymentStatus === "PAID" ? `/tickets/${booking.id}` : `/bookings/${booking.id}/pay`} className="text-[#4b41e1] hover:text-[#4d41df] transition-colors">
+                        <span className="material-symbols-outlined">visibility</span>
+                      </Link>
                   </td>
                 </tr>
               ))}
@@ -238,7 +238,7 @@ function TicketsView() {
                       booking.paymentStatus === "CANCELLED" ? "bg-red-100 text-red-800" :
                         "bg-amber-100 text-amber-800"
                     }`}>{booking.paymentStatus}</span>
-                  <Link href={`/bookings/${booking.id}`} className="bg-[#4b41e1] text-white px-4 py-2 rounded-lg font-['Inter',_sans-serif] hover:brightness-110 transition-all text-sm">Details</Link>
+                  <Link href={booking.paymentStatus === "PAID" ? `/tickets/${booking.id}` : `/bookings/${booking.id}/pay`} className="bg-[#4b41e1] text-white px-4 py-2 rounded-lg font-['Inter',_sans-serif] hover:brightness-110 transition-all text-sm">Details</Link>
                 </div>
               </div>
             </div>
