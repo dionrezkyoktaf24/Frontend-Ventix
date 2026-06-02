@@ -58,7 +58,7 @@ export default function AdminCreateEventPage() {
       }
 
       setMessage("Event berhasil dibuat!");
-      setTimeout(() => router.push("/admin/dashboard"), 1500);
+      setTimeout(() => router.push("/admin/events"), 1500);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan");
     } finally {

@@ -89,7 +89,7 @@ export default function AdminEditEventPage() {
             }
 
             setMessage("Event berhasil diupdate!");
-            setTimeout(() => router.push("/admin/dashboard"), 1500);
+            setTimeout(() => router.push("/admin/events"), 1500);
         } catch (err: any) {
             setError(err.message || "Terjadi kesalahan");
         } finally {
