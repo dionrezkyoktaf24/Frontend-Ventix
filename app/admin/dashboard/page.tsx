@@ -109,13 +109,70 @@ function StatCard({ icon, iconBg, iconColor, badge, label, value }: any) {
 // ─── Views ────────────────────────────────────────────────────────────────────
 
 function DashboardView() {
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    ticketsSold: 0,
+    activeEvents: 0,
+    totalUsers: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          "https://event-hub-backend-production-20ee.up.railway.app/bookings/admin/dashboard-stats",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        setStats(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchStats();
+  }, []);
   return (
     <>
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon="payments" iconBg={C.primaryFixed} iconColor={C.primary} badge="+12%" label="Total Revenue" value="Rp 128.5M" />
-        <StatCard icon="confirmation_number" iconBg={C.secondaryFixed} iconColor={C.secondary} badge="+5%" label="Tickets Sold" value="1,240" />
-        <StatCard icon="event" iconBg={C.tertiaryFixed} iconColor={C.tertiary} label="Active Events" value="12" />
-        <StatCard icon="person" iconBg={C.surfaceContainerHighest} iconColor={C.onSurfaceVariant} label="Total Users" value="850" />
+        <StatCard
+          icon="payments"
+          iconBg={C.primaryFixed}
+          iconColor={C.primary}
+          label="Total Revenue"
+          value={`Rp ${stats.totalRevenue.toLocaleString("id-ID")}`}
+        />
+
+        <StatCard
+          icon="confirmation_number"
+          iconBg={C.secondaryFixed}
+          iconColor={C.secondary}
+          label="Tickets Sold"
+          value={stats.ticketsSold}
+        />
+
+        <StatCard
+          icon="event"
+          iconBg={C.tertiaryFixed}
+          iconColor={C.tertiary}
+          label="Active Events"
+          value={stats.activeEvents}
+        />
+
+        <StatCard
+          icon="person"
+          iconBg={C.surfaceContainerHighest}
+          iconColor={C.onSurfaceVariant}
+          label="Total Users"
+          value={stats.totalUsers}
+        />
       </section>
 
       <section
