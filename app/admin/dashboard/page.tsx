@@ -420,6 +420,177 @@ function UsersView() {
   );
 }
 
+function OrdersView() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          "https://event-hub-backend-production-20ee.up.railway.app/bookings/admin/all",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        setOrders(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "PAID":
+        return "bg-green-100 text-green-700";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-700";
+      case "CANCELLED":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <div className="mb-8">
+        <h2
+          className="text-2xl font-bold"
+          style={{
+            color: C.onSurface,
+            fontFamily: "'Plus Jakarta Sans', sans-serif",
+          }}
+        >
+          Orders Management
+        </h2>
+
+        <p
+          className="text-sm mt-1"
+          style={{ color: C.onSurfaceVariant }}
+        >
+          Daftar semua transaksi pemesanan tiket
+        </p>
+      </div>
+
+      {loading ? (
+        <p style={{ color: C.onSurfaceVariant }}>
+          Memuat orders...
+        </p>
+      ) : (
+        <div
+          className="overflow-x-auto rounded-xl border"
+          style={{ borderColor: C.outlineVariant }}
+        >
+          <table className="w-full text-left">
+            <thead
+              style={{ backgroundColor: C.surfaceContainerLow }}
+            >
+              <tr>
+                {[
+                  "Order ID",
+                  "Invoice",
+                  "User",
+                  "Event",
+                  "Total",
+                  "Status",
+                  "Date",
+                ].map((col) => (
+                  <th
+                    key={col}
+                    className="px-6 py-4 text-sm font-semibold"
+                    style={{ color: C.onSurfaceVariant }}
+                  >
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {orders.map((order) => (
+                <tr
+                  key={order.id}
+                  className="border-t"
+                  style={{
+                    borderColor: C.outlineVariant,
+                  }}
+                >
+                  <td
+                    className="px-6 py-4"
+                    style={{ color: C.onSurface }}
+                  >
+                    #{order.id}
+                  </td>
+
+                  <td
+                    className="px-6 py-4"
+                    style={{ color: C.onSurfaceVariant }}
+                  >
+                    {order.invoiceCode}
+                  </td>
+
+                  <td
+                    className="px-6 py-4 font-medium"
+                    style={{ color: C.onSurface }}
+                  >
+                    {order.user?.name}
+                  </td>
+
+                  <td
+                    className="px-6 py-4"
+                    style={{ color: C.onSurfaceVariant }}
+                  >
+                    {order.event?.title}
+                  </td>
+
+                  <td
+                    className="px-6 py-4 font-semibold"
+                    style={{ color: C.onSurface }}
+                  >
+                    Rp{" "}
+                    {order.totalPrice?.toLocaleString("id-ID")}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        order.paymentStatus
+                      )}`}
+                    >
+                      {order.paymentStatus}
+                    </span>
+                  </td>
+
+                  <td
+                    className="px-6 py-4"
+                    style={{ color: C.onSurfaceVariant }}
+                  >
+                    {new Date(
+                      order.createdAt
+                    ).toLocaleDateString("id-ID")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeNav, setActiveNav] = useState("dashboard");
@@ -486,7 +657,7 @@ export default function AdminDashboardPage() {
       case "events":
         return <EventsView />;
       case "orders":
-        return <PlaceholderView title="Orders & Transactions" description="Track ticket sales, refunds, and general transaction history securely." icon="shopping_cart" />;
+        return <OrdersView />;
       case "users":
         return <UsersView />;
       case "analytics":
